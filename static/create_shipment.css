@@ -7,7 +7,7 @@ body {
   overflow: hidden;
 }
 
-.dashboard-container {
+.dashboard-container { 
   display: flex;
   height: 100vh;
 }

@@ -1,0 +1,106 @@
+/* Overall table styling */
+.shipments-table-container {
+    width: 100%;
+    margin: 20px auto;
+    overflow-x: auto;
+}
+
+.shipments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.shipments-table th,
+.shipments-table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.shipments-table th {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+}
+
+.shipments-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.shipments-table tr:hover {
+    background-color: #ddd;
+}
+
+.table-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.select-actions {
+    margin-bottom: 10px;
+}
+
+.select-actions form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Responsive styling for smaller screens */
+@media (max-width: 768px) {
+    .shipments-table {
+        font-size: 14px;
+    }
+
+    .shipments-table th,
+    .shipments-table td {
+        padding: 8px;
+    }
+}
+
+/* Styling for table headers */
+.shipments-table th {
+    text-align: center;
+}
+
+/* Styling for table rows */
+.shipments-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.edit-btn,
+.delete-btn {
+    display: inline-block;
+    padding: 5px 10px;
+    text-decoration: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 13px;
+    margin: 0px;
+}
+
+.edit-btn {
+    background-color: #2196F3;
+}
+
+.delete-btn {
+    background-color: #f44336;
+}
+
+
+/* Styling for the table container */
+.shipments-table-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+}
+

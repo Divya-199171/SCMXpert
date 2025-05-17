@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SCMXpertLite - Sign Up</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <style>
+    .flash.error { color: red; margin: 10px 0; }
+    .flash.success { color: green; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h2>SCMXpertLite</h2>
+      <h3>Create Account</h3>
+
+      {% if request.query_params.get('error') %}
+        <div class="flash error">{{ request.query_params.get('error') }}</div>
+      {% elif request.query_params.get('message') %}
+        <div class="flash success">{{ request.query_params.get('message') }}</div>
+      {% endif %}
+
+      <form method="POST">
+        <input type="text" name="fullname" placeholder="Full Name" pattern="[A-Za-z ]+" title="Only letters and spaces allowed" required>
+        <input type="email" name="email" placeholder="Email Address" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        
+        <select id="role" name="role" required>
+          <option value="">-- Select Role --</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+
+        <button type="submit">Sign Up</button>
+      </form>
+
+      <small>I accept the Privacy Policy & Terms of Use</small>
+      <p class="switch-link">Already have an account? <a href="{{ url_for('get_login') }}">Sign In</a></p>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector("form").addEventListener("submit", function (e) {
+      const fullname = document.querySelector('input[name="fullname"]').value;
+      if (!/^[A-Za-z ]+$/.test(fullname)) {
+        alert("Full Name can only contain letters and spaces.");
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

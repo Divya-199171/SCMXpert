@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SCMXpertLite - Login</title>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h2>SCMXpertLite</h2>
+      <h3>Welcome back!</h3>
+      <p>Please login with your credentials.</p>
+
+      {% if error %}
+        <div class="flash error">{{ error }}</div>
+      {% elif message %}
+        <div class="flash success">{{ message }}</div>
+        <script>
+          alert("{{ message }}");
+        </script>
+      {% endif %}
+
+      <form method="POST">
+        <input type="email" name="username" placeholder="Email address" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <div class="g-recaptcha" data-sitekey="{{ site_key }}"></div>
+        <button type="submit">Sign In</button>
+      </form>
+      
+      <p class="switch-link">New here? <a href="{{ url_for('get_signup') }}">Create an account</a></p>
+    </div>
+  </div>
+</body>
+</html>

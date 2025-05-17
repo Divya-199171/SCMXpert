@@ -1,0 +1,38 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', path='admin.css') }}">
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="/static/logo.jpg" alt="Logo" />
+            <h3>Exafluence</h3>
+        </div>
+
+        <div class="sidebar-links">
+            <ul class="nav-links">
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/create-shipment">New Shipment</a></li>
+            </ul>
+
+            <div class="logout-container">
+                <a class="logout-btn" href="/logout">Logout</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

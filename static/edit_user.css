@@ -1,0 +1,48 @@
+
+    .edit-form {
+        max-width: 400px;
+        margin: 30px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        background-color: #f9f9f9;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .edit-form label {
+        display: block;
+        margin-top: 15px;
+        font-weight: bold;
+    }
+
+    .edit-form input[type="text"],
+    .edit-form input[type="email"],
+    .edit-form select {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
+    .btn-edit {
+        margin-top: 20px;
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-edit:hover {
+        background-color: #45a049;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+    }

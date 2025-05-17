@@ -1,0 +1,94 @@
+{% extends "base1.html" %}
+
+{% block title %}All Shipment{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', path='allshipments.css') }}">
+
+{% endblock %}
+
+{% block content %}
+<h1>All Shipments</h1>
+
+<!-- Top-right corner buttons -->
+<div class="table-actions">
+    <a href="#" class="edit-btn" onclick="handleEditSelected()">Edit Selected</a>
+    <a href="#" class="delete-btn" onclick="handleDeleteSelected()">Delete Selected</a>
+</div>
+
+<!-- Shipments Table with selection -->
+<form id="shipment-form" method="post">
+    <div class="shipments-table-container">
+        <table class="shipments-table">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>ID</th>
+                    <th>Shipment Number</th>
+                    <th>Route</th>
+                    <th>Device</th>
+                    <th>PO Number</th>
+                    <th>NDC</th>
+                    <th>Serial Number</th>
+                    <th>Goods Type</th>
+                    <th>EDD</th>
+                    <th>Delivery Number</th>
+                    <th>Batch ID</th>
+                    <th>Description</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shipment in shipments %}
+                <tr>
+                    <td><input type="checkbox" name="selected_shipments" value="{{ shipment._id }}"></td>
+                    <td>{{ shipment._id }}</td>
+                    <td>{{ shipment.shipmentNumber }}</td>
+                    <td>{{ shipment.route }}</td>
+                    <td>{{ shipment.device }}</td>
+                    <td>{{ shipment.poNumber }}</td>
+                    <td>{{ shipment.ndcNumber }}</td>
+                    <td>{{ shipment.serialNumber }}</td>
+                    <td>{{ shipment.goodsType }}</td>
+                    <td>{{ shipment.expected_delivery_date }}</td>
+                    <td>{{ shipment.deliveryNumber }}</td>
+                    <td>{{ shipment.batchId }}</td>
+                    <td>{{ shipment.shipmentDesc }}</td>
+                    <td>{{ shipment.created_at.strftime('%Y-%m-%d %H:%M:%S') if shipment.created_at else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<script>
+    function getSelectedIds() {
+        const checkboxes = document.querySelectorAll('input[name="selected_shipments"]:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function handleEditSelected() {
+        const selected = getSelectedIds();
+        if (selected.length !== 1) {
+            alert("Please select exactly one shipment to edit.");
+            return;
+        }
+        window.location.href = `/editshipment/${selected[0]}`;
+    }
+
+    function handleDeleteSelected() {
+        const selected = getSelectedIds();
+        if (selected.length === 0) {
+            alert("Please select at least one shipment to delete.");
+            return;
+        }
+        if (!confirm("Are you sure you want to delete the selected shipment(s)?")) return;
+
+        // Submit via POST to a delete handler (you should have a route to handle bulk deletes)
+        const form = document.getElementById("shipment-form");
+        form.action = "/deleteshipments";  // Create a POST route for this in FastAPI
+        form.submit();
+    }
+</script>
+{% endblock %}

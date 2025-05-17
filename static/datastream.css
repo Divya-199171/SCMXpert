@@ -1,0 +1,110 @@
+
+
+    /* Glossy Gradient Background */
+    body {
+        background: linear-gradient(135deg, #c3cfe2, #c3e0e5, #dde6f1);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        font-family: 'Poppins', sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+    }
+
+    @keyframes gradientBG {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
+    }
+
+    /* Card Styling */
+    .device-streaming {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 15px;
+        padding: 30px;
+        margin-top: 60px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .device-streaming h2 {
+        text-align: center;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 30px;
+    }
+
+    /* Table Styling */
+    table {
+        width: 100%;
+        background-color: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    th {
+        background: #3498db;
+        color: white;
+        text-align: center;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    td {
+        text-align: center;
+        padding: 10px;
+        font-size: 15px;
+        color: #34495e;
+    }
+
+    tbody tr:hover {
+        background-color: #eaf2f8;
+        transition: 0.3s;
+    }
+
+    /* DataTables Search Box */
+    .dataTables_wrapper .dataTables_filter input {
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 6px 12px;
+        margin-left: 5px;
+        width: 250px;
+    }
+
+    /* Pagination Buttons */
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        background: #3498db;
+        color: white !important;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 15px;
+        margin: 2px;
+        cursor: pointer;
+        transition: 0.3s;
+        display: inline-block !important;
+        margin: 0 4px !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        flex-wrap: nowrap;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #2980b9;
+        color: white !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #2c3e50 !important;
+        color: white !important;
+    }
+
+    /* Previous and Next Button Styling */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        font-weight: bold;
+    }
+

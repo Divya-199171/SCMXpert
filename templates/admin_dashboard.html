@@ -1,0 +1,29 @@
+<!-- templates/dashboard.html -->
+{% extends "base1.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %} 
+
+
+
+<div class="main-content">
+  <h2>Hi Admin, Welcome to SCMXPertLite</h2>
+
+  <div class="panel-container">
+    <div class="panel left-panel">
+      <h3>Create a New Shipment</h3>
+      <button class="btn">
+        <a href="/create-shipment" style="color: white; text-decoration: none;">Create Shipment</a>
+      </button>
+    </div>
+
+    <div class="panel right-panel">
+      <h3>To see Device Data Stream.</h3>
+      <button class="btn">
+        <a href="/data-streaming" style="color: white; text-decoration: none;">Data Streaming</a>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}

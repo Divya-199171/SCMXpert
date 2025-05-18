@@ -158,6 +158,13 @@ def get_dashboard(request: Request, current_user: dict = Depends(get_required_cu
         "message": request.query_params.get("message")
     })
 
+@router.get("/user-profile", response_class=HTMLResponse)
+def get_user_profile(request: Request, current_user: dict = Depends(get_required_current_user)):
+    return templates.TemplateResponse("user-profile.html", {
+        "request": request,
+        "user": current_user
+    })
+
 
 @router.get("/admin-dashboard", response_class=HTMLResponse)
 def get_admin_dashboard(request: Request, current_user: dict = Depends(get_current_admin_user)):

@@ -17,10 +17,10 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/create-shipment", response_class=HTMLResponse)
-async def get_create_shipment_form(request: Request, current_user: dict = Depends(get_current_admin_user)):
-    last_shipment = shipments_collection.find_one(sort=[("shipment_number", DESCENDING)])
-    if last_shipment and "shipment_number" in last_shipment:
-        last_id = last_shipment["shipment_number"]
+async def get_create_shipment_form(request: Request, current_user: dict = Depends(get_required_current_user)):
+    last_shipment = shipments_collection.find_one(sort=[("shipmentNumber", DESCENDING)])
+    if last_shipment and "shipmentNumber" in last_shipment:
+        last_id = last_shipment["shipmentNumber"]
         num_part = int(last_id.replace("exfscm", ""))
         new_id = f"exfscm{num_part+1:02}"
     else:
@@ -52,7 +52,7 @@ async def create_shipment(request: Request,
     deliveryNumber: int = Form(...),
     batchId: str = Form(...),
     shipmentDesc: str = Form(...),
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(get_required_current_user)
     
 ):
 

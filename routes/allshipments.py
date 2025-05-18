@@ -24,7 +24,7 @@ db = client['projectfast']
 shipments_collection = db['shipments']
 
 @router.get("/allshipment")
-async def allshipments(request: Request, user=Depends(get_current_admin_user)):
+async def allshipments(request: Request, user=Depends(get_required_current_user)):
     shipments = list(shipments_collection.find())
 
     for shipment in shipments:
@@ -37,7 +37,7 @@ async def allshipments(request: Request, user=Depends(get_current_admin_user)):
     })
 
 @router.get("/editshipment/{shipment_id}")
-async def edit_shipment_form(request: Request, shipment_id: str, user=Depends(get_current_admin_user)):
+async def edit_shipment_form(request: Request, shipment_id: str, user=Depends(get_required_current_user)):
     shipment = shipments_collection.find_one({"_id": ObjectId(shipment_id)})
     if shipment:
         shipment['_id'] = str(shipment['_id'])
@@ -84,7 +84,7 @@ async def update_shipment(
 
 # Delete route
 @router.post("/deleteshipments")
-async def delete_selected_shipments(request: Request, user=Depends(get_current_admin_user)):
+async def delete_selected_shipments(request: Request, user=Depends(get_required_current_user)):
     form_data = await request.form()
     selected_ids = form_data.getlist("selected_shipments")
     

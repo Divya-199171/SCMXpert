@@ -22,7 +22,7 @@ db = client['projectfast']
 users_collection = db['user']
 
 @router.get("/Manageusers")
-async def manage_users(request: Request, current_user: dict = Depends(get_current_admin_user)):
+async def manage_users(request: Request, current_user: dict = Depends(get_required_current_user)):
     users = list(users_collection.find())
 
     for user in users:
@@ -35,7 +35,7 @@ async def manage_users(request: Request, current_user: dict = Depends(get_curren
     })
 
 @router.get("/edit_user/{user_id}")
-async def edit_user(request: Request, user_id: str, current_user: dict = Depends(get_current_admin_user)):
+async def edit_user(request: Request, user_id: str, current_user: dict = Depends(get_required_current_user)):
     user = users_collection.find_one({"_id": ObjectId(user_id)})
     if user:
         user['_id'] = str(user['_id'])
@@ -43,7 +43,7 @@ async def edit_user(request: Request, user_id: str, current_user: dict = Depends
     return RedirectResponse(url="/Manageusers", status_code=status.HTTP_302_FOUND)
 
 @router.post("/edit_user/{user_id}")
-async def update_user(user_id: str, name: str = Form(...), email: str = Form(...), role: str = Form(...), current_user: dict = Depends(get_current_admin_user)):
+async def update_user(user_id: str, name: str = Form(...), email: str = Form(...), role: str = Form(...), current_user: dict = Depends(get_required_current_user)):
     users_collection.update_one(
         {"_id": ObjectId(user_id)},
         {"$set": {"name": name, "email": email, "role": role}}

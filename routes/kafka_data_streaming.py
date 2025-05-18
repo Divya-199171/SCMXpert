@@ -64,7 +64,7 @@ async def data_streaming(request: Request):
 async def get_device_data():
     try:
         # Query all documents, sorted by latest first (optional)
-        data_streams = list(datastream_collection.find().sort("_id", -1)) 
+        data_streams = list(datastream_collection.find().sort("_id", DESCENDING)) 
         
         for doc in data_streams:
             doc["_id"] = str(doc["_id"])  # Convert ObjectId to string for JSON serialization

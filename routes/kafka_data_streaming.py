@@ -26,9 +26,7 @@ except ImportError as e:
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-# --- MongoDB Connection (scoped to this router) ---
-# It's generally more efficient to share the client from app.py,
-# but creating one here as requested.
+
 MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
     print("FATAL ERROR: MONGO_URI environment variable not set.")
@@ -64,7 +62,7 @@ async def data_streaming(request: Request):
 async def get_device_data():
     try:
         # Query all documents, sorted by latest first (optional)
-        data_streams = list(datastream_collection.find().sort("_id", DESCENDING)) 
+        data_streams = list(datastream_collection.find().sort("_id", -1)) 
         
         for doc in data_streams:
             doc["_id"] = str(doc["_id"])  # Convert ObjectId to string for JSON serialization
@@ -90,10 +88,9 @@ async def streaming_page(
          raise HTTPException(status_code=503, detail="Database connection is unavailable.")
 
     try:
-        # Query the correct collection, sort by _id descending, and limit results
-        streaming_values = list(datastream_collection.find()
-                                .sort("_id", DESCENDING)) # Get most recent first
-                                #.limit(100)) # Limit to 100 documents
+        # Query the correct collection
+        streaming_values = list(datastream_collection.find().sort("_id", -1)) # Get most recent first
+                                
 
         context = {
             "request": request,

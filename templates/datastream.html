@@ -8,7 +8,10 @@
 <div class="container">
     <div class="device-streaming">
         <h2>Device Streaming Data</h2>
-
+         
+        <div class="mb-3 text-right">
+            <button id="refreshButton" class="btn btn-primary">🔄 Refresh</button>
+        </div>
         <div class="table-responsive">
             <table id="deviceTable" class="table table-bordered table-hover">
                 <thead>
@@ -72,7 +75,8 @@
 
     $(document).ready(function () {
         deviceTable = $('#deviceTable').DataTable({
-            "pageLength": 50, // Show more records by default
+            "order": [],
+            "pageLength": 10, // Show more records by default
             "lengthMenu": [10, 25, 50, 100, 500, 1000],
             "ordering": true,
             "searching": true,

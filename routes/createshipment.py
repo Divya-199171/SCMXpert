@@ -80,6 +80,7 @@ async def create_shipment(request: Request,
     except ValidationError as e:
         # Pydantic validation errors
         # Join all error messages into one string to send back
+        
         errors = "; ".join([err['msg'] for err in e.errors()])
         return RedirectResponse(
             url=f"/create-shipment?error=Validation%20error:%20{errors}",

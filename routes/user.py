@@ -46,7 +46,7 @@ def get_login(request: Request, error: str = None, message: str = None):
         response.delete_cookie("access_token")
     return response
 
-
+    
 @router.post("/login", response_class=RedirectResponse)
 async def post_login(
     request: Request,

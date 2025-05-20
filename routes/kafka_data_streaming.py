@@ -5,7 +5,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pymongo import MongoClient, DESCENDING # Import DESCENDING for sorting
 from typing import Annotated # Needed for Depends syntax
+from core.auth import get_required_current_user, get_current_admin_user
 
+'''
 # --- Attempt to import the authentication dependency ---
 # This assumes your main app file is named 'app.py' and is structured
 # correctly to allow this import. This might be fragile.
@@ -22,6 +24,7 @@ except ImportError as e:
         print("WARNING: Running /data-streaming without authentication due to import error.")
         # Return a dummy user dict or None, depending on what your template expects minimally
         return {"name": "Guest (Auth Failed)", "role": "guest", "email": ""}
+'''
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")

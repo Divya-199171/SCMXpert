@@ -11,15 +11,13 @@ services:
       - kafka
     env_file:
       - .env
-    networks:
-      - app-network
+   
 
   zookeeper:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
-    networks:
-      - app-network
+    
 
   kafka:
     image: wurstmeister/kafka
@@ -33,15 +31,13 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_HEAP_OPTS: "-Xmx256M -Xms128M"
-    networks:
-      - app-network
+    
 
   mongo:
     image: mongo
     ports:
       - "27017:27017"
-    networks:
-      - app-network
+    
 
   socket:
     build: ./kafka/socket  # Path to socket server
@@ -49,16 +45,14 @@ services:
       - kafka
     ports:
       - "5050:5050"
-    networks:
-      - app-network
+    
 
   producer:
     build: ./kafka/producer  # Path to producer folder
     depends_on:
       - kafka
       - socket
-    networks:
-      - app-network
+    
 
   consumer:
     build: ./kafka/consumer  # Path to consumer folder
@@ -72,6 +66,4 @@ services:
     networks:
       - app-network
 
-networks:
-  app-network:
-    driver: bridge
+

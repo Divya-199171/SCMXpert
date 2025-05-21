@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-
   fastapi_app:
     build: .
     ports:
@@ -12,12 +11,10 @@ services:
     env_file:
       - .env
    
-
   zookeeper:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
-    
 
   kafka:
     image: wurstmeister/kafka
@@ -30,7 +27,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_HEAP_OPTS: "-Xmx256M -Xms128M"
+      #KAFKA_HEAP_OPTS: "-Xmx256M -Xms128M"
     
 
   mongo:
@@ -63,7 +60,6 @@ services:
     environment:
       # MongoDB Atlas connection for consumer
       - DATABASE_URL=mongodb+srv://guthidivya:Chandan25@cluster0.r1qau.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-    networks:
-      - app-network
+    
 
 

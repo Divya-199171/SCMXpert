@@ -91,7 +91,7 @@ async def create_shipment(request: Request,
     shipment_data = shipment_obj.dict()
     shipment_data["created_at"] = datetime.utcnow()
     shipment_data["expected_delivery_date"] = shipment_data.pop("deliveryDate").strftime("%Y-%m-%d")  # keep same format for MongoDB
-
+    shipment_data["created_by"] = current_user.get("name", "unknown")
     shipments_collection.insert_one(shipment_data)
 
     return RedirectResponse(

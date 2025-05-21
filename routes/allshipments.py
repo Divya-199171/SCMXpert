@@ -10,6 +10,8 @@ from schema.schema import Shipments
 from fastapi import HTTPException
 from core.auth import get_required_current_user, get_current_admin_user
 from fastapi import Depends
+from typing import Optional
+from fastapi import Query
 
 # Load .env variables
 load_dotenv()
@@ -24,16 +26,25 @@ db = client['projectfast']
 shipments_collection = db['shipments']
 
 @router.get("/allshipment")
-async def allshipments(request: Request, user=Depends(get_required_current_user)):
-    shipments = list(shipments_collection.find())
+async def allshipments(
+    request: Request,
+    created_by: Optional[str] = Query(None),
+    user=Depends(get_required_current_user)
+):
+    query = {}
+    if created_by:
+        # Case-insensitive starts-with search on created_by
+        query["created_by"] = {"$regex": f"^{created_by}", "$options": "i"}
+
+    shipments = list(shipments_collection.find(query))
 
     for shipment in shipments:
         shipment['_id'] = str(shipment['_id'])
 
-
     return templates.TemplateResponse("allshipments.html", {
         "request": request,
-        "shipments": shipments
+        "shipments": shipments,
+        "created_by": created_by or ""
     })
 
 @router.get("/editshipment/{shipment_id}")

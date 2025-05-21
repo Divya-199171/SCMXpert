@@ -16,6 +16,14 @@
     <a href="#" class="delete-btn" onclick="handleDeleteSelected()">Delete Selected</a>
 </div>
 
+<!-- Search by Created By -->
+<form method="get" action="/allshipment" style="margin-bottom: 1em;">
+    <input type="text" name="created_by" placeholder="Search by Created By" value="{{ created_by }}">
+    <button type="submit">Search</button>
+</form>
+
+
+
 <!-- Shipments Table with selection -->
 <form id="shipment-form" method="post">
     <div class="shipments-table-container">
@@ -23,8 +31,8 @@
             <thead>
                 <tr>
                     <th>Select</th>
-                    <th>ID</th>
                     <th>Shipment Number</th>
+                    <th>created_by</th>
                     <th>Route</th>
                     <th>Device</th>
                     <th>PO Number</th>
@@ -42,8 +50,8 @@
                 {% for shipment in shipments %}
                 <tr>
                     <td><input type="checkbox" name="selected_shipments" value="{{ shipment._id }}"></td>
-                    <td>{{ shipment._id }}</td>
                     <td>{{ shipment.shipmentNumber }}</td>
+                    <td>{{ shipment.created_by }}</td>
                     <td>{{ shipment.route }}</td>
                     <td>{{ shipment.device }}</td>
                     <td>{{ shipment.poNumber }}</td>

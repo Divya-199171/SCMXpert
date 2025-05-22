@@ -44,8 +44,9 @@ async def allshipments(
     return templates.TemplateResponse("allshipments.html", {
         "request": request,
         "shipments": shipments,
-        "created_by": created_by or ""
+        "created_by": created_by or "",
     })
+
 
 @router.get("/editshipment/{shipment_id}")
 async def edit_shipment_form(request: Request, shipment_id: str, user=Depends(get_required_current_user)):

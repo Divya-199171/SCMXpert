@@ -1,7 +1,7 @@
 # core/auth.py
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import Request, HTTPException, status, Depends
 from jose import JWTError, jwt
@@ -83,3 +83,40 @@ async def get_current_admin_user(current_user: dict = Depends(get_required_curre
             detail="Admin privileges required."
         )
     return current_user
+
+
+
+def decode_token(token: str) -> Dict[str, Any]:
+    """
+    Decode and verify a JWT token.
+    
+    Args:
+        token: The JWT token to decode
+        
+    Returns:
+        dict: The decoded token payload if valid
+        
+    Raises:
+        HTTPException: If token is invalid or expired
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Check if token is expired
+        if "exp" in payload:
+            expiration = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+            if expiration < datetime.now(timezone.utc):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has expired",
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
+        
+        return payload
+        
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"}
+        )

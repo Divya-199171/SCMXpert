@@ -28,11 +28,11 @@ MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 # Routes 
 
-app.include_router(manage_users.router)
-app.include_router(allshipments.router)
-app.include_router(user.router)
-app.include_router(createshipment.router)
-app.include_router(kafka_data_streaming.router)
+app.include_router(manage_users.router,tags=["Manage users"])
+app.include_router(allshipments.router,tags=["all shipments"])
+app.include_router(user.router,tags=["users"])
+app.include_router(createshipment.router,tags=["create shipment"])
+app.include_router(kafka_data_streaming.router,tags=["kafka"])
 
 
 

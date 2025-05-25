@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 
 from fastapi import Request, HTTPException, status, Depends
+from fastapi.responses import RedirectResponse # <--- ADD THIS IMPORT
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
@@ -29,9 +30,16 @@ class TokenData(BaseModel):
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_token(token: str) -> Dict[str, Any]:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError as e:
+        raise e
 
 
 # --- Dependencies ---
@@ -41,37 +49,63 @@ async def get_current_user(request: Request) -> Optional[dict]:
         return None
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = decode_token(token)
         email = payload.get("sub")
         role = payload.get("role")
+        name = payload.get("name")
 
-        if email is None or role is None:
+        if email is None:
+            # This is an invalid token structure if 'sub' is missing.
+            # Create a response to clear cookies and redirect.
+            response = RedirectResponse(url="/login?error=Invalid+token+payload", status_code=status.HTTP_303_SEE_OTHER)
+            response.delete_cookie("access_token")
+            response.delete_cookie("user_email")
+            response.delete_cookie("user_role")
+            response.delete_cookie("user_name")
             raise HTTPException(
                 status_code=status.HTTP_303_SEE_OTHER,
-                headers={"Location": "/login?error=Invalid+token.+Please+log+in."},
+                detail="Invalid token payload: Missing email.",
+                headers=response.headers, # Use headers from the RedirectResponse
             )
 
         user = users_collection.find_one({"email": email})
         if not user:
+            # User for whom token was issued no longer exists.
+            response = RedirectResponse(url="/login?error=User+not+found.+Please+log+in+again.", status_code=status.HTTP_303_SEE_OTHER)
+            response.delete_cookie("access_token")
+            response.delete_cookie("user_email")
+            response.delete_cookie("user_role")
+            response.delete_cookie("user_name")
             raise HTTPException(
                 status_code=status.HTTP_303_SEE_OTHER,
-                headers={"Location": "/login?error=User+not+found."},
+                detail="User not found.",
+                headers=response.headers, # Use headers from the RedirectResponse
             )
-
-        return {"email": user["email"], "name": user["name"], "role": user.get("role", "user")}
+        
+        return {"email": email, "name": name, "role": role}
     
     except JWTError:
+        # Token is invalid (expired, malformed, wrong signature)
+        response = RedirectResponse(url="/login?error=Session+expired+or+invalid.", status_code=status.HTTP_303_SEE_OTHER)
+        response.delete_cookie("access_token")
+        response.delete_cookie("user_email")
+        response.delete_cookie("user_role")
+        response.delete_cookie("user_name")
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
-            headers={"Location": "/login?error=Session+expired+or+invalid."},
+            detail="Session expired or invalid. Please log in again.",
+            headers=response.headers, # Use headers from the RedirectResponse
         )
 
 
 async def get_required_current_user(current_user: dict = Depends(get_current_user)) -> dict:
     if current_user is None:
+        # get_current_user itself should have handled the redirect for cookie-related issues.
+        # This case now means 'no token at all' was initially present.
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
-            headers={"Location": "/login?error=Authentication+required."},
+            detail="Authentication required. Please log in.",
+            headers={"Location": "/login?error=Authentication+required"},
         )
     return current_user
 
@@ -79,44 +113,8 @@ async def get_required_current_user(current_user: dict = Depends(get_current_use
 async def get_current_admin_user(current_user: dict = Depends(get_required_current_user)) -> dict:
     if current_user.get("role") != "admin":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required."
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail="Admin privileges required.",
+            headers={"Location": "/dashboard?error=Admin+access+required"}
         )
     return current_user
-
-
-
-def decode_token(token: str) -> Dict[str, Any]:
-    """
-    Decode and verify a JWT token.
-    
-    Args:
-        token: The JWT token to decode
-        
-    Returns:
-        dict: The decoded token payload if valid
-        
-    Raises:
-        HTTPException: If token is invalid or expired
-    """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        # Check if token is expired
-        if "exp" in payload:
-            expiration = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-            if expiration < datetime.now(timezone.utc):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token has expired",
-                    headers={"WWW-Authenticate": "Bearer"}
-                )
-        
-        return payload
-        
-    except JWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"}
-        )

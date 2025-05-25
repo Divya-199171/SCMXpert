@@ -42,8 +42,6 @@
                     <th>EDD</th>
                     <th>Delivery Number</th>
                     <th>Batch ID</th>
-                    <th>Description</th>
-                    <th>Created At</th>
                 </tr>
             </thead>
             <tbody>
@@ -61,8 +59,6 @@
                     <td>{{ shipment.expected_delivery_date }}</td>
                     <td>{{ shipment.deliveryNumber }}</td>
                     <td>{{ shipment.batchId }}</td>
-                    <td>{{ shipment.shipmentDesc }}</td>
-                    <td>{{ shipment.created_at.strftime('%Y-%m-%d %H:%M:%S') if shipment.created_at else 'N/A' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

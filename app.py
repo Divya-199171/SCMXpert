@@ -19,6 +19,7 @@ from core.admin import create_default_admin
 
 app = FastAPI()
 
+
 create_default_admin()
 # Static files 
 app.mount("/static", StaticFiles(directory="static"), name="static")

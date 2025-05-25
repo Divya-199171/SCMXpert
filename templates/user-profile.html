@@ -9,4 +9,46 @@
     <p><strong>Email:</strong> {{ user.email }}</p>
     <p><strong>Role:</strong> {{ user.role }}</p>
 </div>
+
+<div class="user-shipments">
+    <h3>Your Shipments</h3>
+    {% if shipments %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Shipment Number</th>
+                    <th>Route</th>
+                    <th>Device</th>
+                    <th>PO Number</th>
+                    <th>NDC Number</th>
+                    <th>Serial Number</th>
+                    <th>Goods Type</th>
+                    <th>Expected Delivery</th>
+                    <th>Delivery Number</th>
+                    <th>Batch ID</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shipment in shipments %}
+                <tr>
+                    <td>{{ shipment.shipmentNumber }}</td>
+                    <td>{{ shipment.route }}</td>
+                    <td>{{ shipment.device }}</td>
+                    <td>{{ shipment.poNumber }}</td>
+                    <td>{{ shipment.ndcNumber }}</td>
+                    <td>{{ shipment.serialNumber }}</td>
+                    <td>{{ shipment.goodsType }}</td>
+                    <td>{{ shipment.expected_delivery_date }}</td>
+                    <td>{{ shipment.deliveryNumber }}</td>
+                    <td>{{ shipment.batchId }}</td>
+                    <td>{{ shipment.shipmentDesc }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No shipments found for this user.</p>
+    {% endif %}
+</div>
 {% endblock %}

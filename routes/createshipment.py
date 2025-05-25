@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from fastapi import status
 from core.database import shipments_collection
 from core.auth import get_required_current_user, get_current_admin_user
-from schema.schema import Shipments
+from core.schema import Shipments
 
 
 router = APIRouter()

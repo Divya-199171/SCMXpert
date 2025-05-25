@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 from fastapi import Form
 from fastapi.responses import RedirectResponse
-from schema.schema import Shipments
+from core.schema import Shipments
 from fastapi import HTTPException
 from core.auth import get_required_current_user, get_current_admin_user
 from fastapi import Depends

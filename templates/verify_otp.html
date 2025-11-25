@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Verify OTP</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h2>Enter OTP</h2>
+      <p>We sent an OTP to <strong>{{ email }}</strong>. Enter it below to continue.</p>
+
+      {% if error %}
+        <div class="flash error">{{ error }}</div>
+      {% elif message %}
+        <div class="flash success">{{ message }}</div>
+      {% endif %}
+
+      <form method="POST">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="text" name="otp" placeholder="Enter OTP" required>
+        <button type="submit">Verify OTP</button>
+      </form>
+
+      <p class="switch-link"><a href="{{ url_for('forgot_password_get') }}">Resend OTP</a></p>
+      <p class="switch-link"><a href="{{ url_for('get_login') }}">Back to login</a></p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,10 +1,8 @@
-# core/auth.py
-
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 
 from fastapi import Request, HTTPException, status, Depends
-from fastapi.responses import RedirectResponse # <--- ADD THIS IMPORT
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
@@ -12,8 +10,7 @@ from pydantic import BaseModel, EmailStr
 from core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from core.database import users_collection
 
-
-# --- Password hashing ---
+# ------------------ Password hashing ------------------
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -22,8 +19,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-
-# --- JWT Models & Token handling ---
+# ------------------ JWT Models & Token handling ------------------
 class TokenData(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[str] = None
@@ -35,16 +31,27 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_token(token: str) -> Dict[str, Any]:
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError as e:
-        raise e
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
+# ------------------ OAuth2 Scheme (for Swagger / API) ------------------
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
-# --- Dependencies ---
-async def get_current_user(request: Request) -> Optional[dict]:
+# ------------------ Dependencies ------------------
+async def get_current_user(
+    request: Request,
+    bearer_token: str = Depends(oauth2_scheme)
+) -> Optional[dict]:
+    """
+    Get current user from cookie (web login) or Bearer token (API clients).
+    """
+
+    # 1. Try cookie first
     token = request.cookies.get("access_token")
+
+    # 2. Fallback to Bearer token
+    if not token and bearer_token:
+        token = bearer_token
+
     if not token:
         return None
 
@@ -54,67 +61,40 @@ async def get_current_user(request: Request) -> Optional[dict]:
         role = payload.get("role")
         name = payload.get("name")
 
-        if email is None:
-            # This is an invalid token structure if 'sub' is missing.
-            # Create a response to clear cookies and redirect.
-            response = RedirectResponse(url="/login?error=Invalid+token+payload", status_code=status.HTTP_303_SEE_OTHER)
-            response.delete_cookie("access_token")
-            response.delete_cookie("user_email")
-            response.delete_cookie("user_role")
-            response.delete_cookie("user_name")
-            raise HTTPException(
-                status_code=status.HTTP_303_SEE_OTHER,
-                detail="Invalid token payload: Missing email.",
-                headers=response.headers, # Use headers from the RedirectResponse
-            )
+        if not email:
+            return None
 
         user = users_collection.find_one({"email": email})
         if not user:
-            # User for whom token was issued no longer exists.
-            response = RedirectResponse(url="/login?error=User+not+found.+Please+log+in+again.", status_code=status.HTTP_303_SEE_OTHER)
-            response.delete_cookie("access_token")
-            response.delete_cookie("user_email")
-            response.delete_cookie("user_role")
-            response.delete_cookie("user_name")
-            raise HTTPException(
-                status_code=status.HTTP_303_SEE_OTHER,
-                detail="User not found.",
-                headers=response.headers, # Use headers from the RedirectResponse
-            )
-        
+            return None
+
         return {"email": email, "name": name, "role": role}
-    
+
     except JWTError:
-        # Token is invalid (expired, malformed, wrong signature)
-        response = RedirectResponse(url="/login?error=Session+expired+or+invalid.", status_code=status.HTTP_303_SEE_OTHER)
-        response.delete_cookie("access_token")
-        response.delete_cookie("user_email")
-        response.delete_cookie("user_role")
-        response.delete_cookie("user_name")
-        raise HTTPException(
-            status_code=status.HTTP_303_SEE_OTHER,
-            detail="Session expired or invalid. Please log in again.",
-            headers=response.headers, # Use headers from the RedirectResponse
-        )
+        return None
 
 
-async def get_required_current_user(current_user: dict = Depends(get_current_user)) -> dict:
-    if current_user is None:
-        # get_current_user itself should have handled the redirect for cookie-related issues.
-        # This case now means 'no token at all' was initially present.
+async def get_required_current_user(
+    request: Request,
+    bearer_token: str = Depends(oauth2_scheme)
+) -> dict:
+    """
+    Force authentication – returns current user or raises 401.
+    """
+    user = await get_current_user(request, bearer_token)
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_303_SEE_OTHER,
-            detail="Authentication required. Please log in.",
-            headers={"Location": "/login?error=Authentication+required"},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    return current_user
+    return user
 
 
 async def get_current_admin_user(current_user: dict = Depends(get_required_current_user)) -> dict:
     if current_user.get("role") != "admin":
         raise HTTPException(
-            status_code=status.HTTP_303_SEE_OTHER,
-            detail="Admin privileges required.",
-            headers={"Location": "/dashboard?error=Admin+access+required"}
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
         )
     return current_user

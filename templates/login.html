@@ -29,6 +29,14 @@
         <div class="g-recaptcha" data-sitekey="{{ site_key }}"></div>
         <button type="submit">Sign In</button>
       </form>
+      <div style="text-align: center; margin: 15px 0;">
+        <span style="color: #666; font-size: 0.9em;">— OR —</span>
+      </div>
+      
+      <a href="/auth/google/login" class="google-btn">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+        Sign in with Google
+      </a>
       
       <p class="switch-link">New here? <a href="{{ url_for('get_signup') }}">Create an account</a></p>
       <p class="switch-link"><a href="{{ url_for('forgot_password_get') }}">Forgot password?</a></p>

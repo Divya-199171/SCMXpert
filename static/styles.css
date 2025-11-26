@@ -170,3 +170,29 @@
       font-size: 11px;
       opacity: 0.8;
     }
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 15px;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.google-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #ccc;
+}
+
+.google-btn img {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+}

@@ -29,6 +29,8 @@ from core.auth import (
     decode_token, get_required_current_user,
     get_current_admin_user
 )
+# ... existing imports ...
+from core.limiter import limiter
 from core.config import (
     RECAPTCHA_SECRET_KEY, RECAPTCHA_SITE_KEY,
     ACCESS_TOKEN_EXPIRE_MINUTES
@@ -180,7 +182,7 @@ def root(request: Request):
     return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.get("/login", response_class=HTMLResponse)
-def get_login(request: Request, error: str = None, message: str = None):
+def get_login(request: Request, error: str = None, message: str = None, email: str = None):
     # Check if already logged in
     access_token = request.cookies.get("access_token")
     if access_token:
@@ -197,10 +199,12 @@ def get_login(request: Request, error: str = None, message: str = None):
         "request": request,
         "site_key": RECAPTCHA_SITE_KEY,
         "error": error,
-        "message": message
+        "message": message,
+        "email_value": email
     })
 
 @router.post("/login", response_class=RedirectResponse)
+@limiter.limit("5/minute")
 async def post_login(
     request: Request,
     username: EmailStr = Form(...),
@@ -218,7 +222,7 @@ async def post_login(
             "status": "failed",
             "ip_address": request.client.host if request.client else "unknown"
         })
-        return RedirectResponse(url="/login?error=Invalid+credentials", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url=f"/login?error=Invalid+credentials&email={username}", status_code=status.HTTP_303_SEE_OTHER)
 
     token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -535,7 +539,8 @@ def get_user_profile(request: Request, current_user: dict = Depends(get_required
 # --- Routes: API ---
 
 @router.post("/api/login", response_class=JSONResponse)
-async def api_login(form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit("10/minute")
+async def api_login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     user = users_collection.find_one({"email": form_data.username})
     if not user or not verify_password(form_data.password, user["password_hash"]):
         raise HTTPException(
@@ -580,3 +585,5 @@ async def get_current_user_from_bearer_token(token: str = Depends(oauth2_scheme)
 @router.get("/api/v1/test-swagger-auth", tags=["API Authentication Test"], summary="Test Bearer Auth")
 async def test_swagger_auth(current_api_user: dict = Depends(get_current_user_from_bearer_token)):
     return {"message": "Authenticated!", "user": current_api_user}
+
+

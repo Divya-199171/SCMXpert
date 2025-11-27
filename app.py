@@ -17,7 +17,18 @@ import threading
 import time
 from core.admin import create_default_admin
 
+# --- NEW IMPORTS FOR RATE LIMITING ---
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from core.limiter import limiter
+
 app = FastAPI()
+# --- CONFIGURE RATE LIMITER ---
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+# ------------------------------
 
 
 create_default_admin()

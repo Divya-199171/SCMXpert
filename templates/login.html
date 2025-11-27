@@ -24,7 +24,13 @@
       {% endif %}
 
       <form method="POST">
-        <input type="email" name="username" placeholder="Email address" required>
+        <input 
+          type="email" 
+          name="username" 
+          placeholder="Email" 
+          required 
+          value="{{ email_value if email_value else '' }}"
+        >
         <input type="password" name="password" placeholder="Password" required>
         <div class="g-recaptcha" data-sitekey="{{ site_key }}"></div>
         <button type="submit">Sign In</button>

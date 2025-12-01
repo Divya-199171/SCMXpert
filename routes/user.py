@@ -21,6 +21,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import EmailStr
 from jose import JWTError
+import pyotp
 
 # Local imports
 from core.database import users_collection, logins_collection, shipments_collection, db
@@ -126,6 +127,10 @@ def send_otp_email(to_email: str, otp: str) -> bool:
     except Exception as e:
         logger.error(f"Error sending OTP email to {to_email}: {e}")
         return False
+    
+def generate_totp_secret() -> str:
+    """Generates a base32 encoded secret for TOTP."""
+    return pyotp.random_base32()
 
 # --- Google SSO Helpers ---
 
@@ -223,6 +228,30 @@ async def post_login(
             "ip_address": request.client.host if request.client else "unknown"
         })
         return RedirectResponse(url=f"/login?error=Invalid+credentials&email={username}", status_code=status.HTTP_303_SEE_OTHER)
+    
+    # --- MFA CHECK ADDED HERE ---
+    if user.get("mfa_enabled") and user.get("mfa_secret"):
+        # User passed password, now proceed to MFA verification
+        # Create a short-lived token just for the MFA step (1 minute)
+        mfa_token_expires = timedelta(minutes=1)
+        mfa_pending_token = create_access_token(
+            data={"sub": user["email"], "mfa_pending": True},
+            expires_delta=mfa_token_expires
+        )
+        
+        response = RedirectResponse(url="/mfa-verify", status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(
+            key="mfa_pending_token",
+            value=mfa_pending_token,
+            httponly=True,
+            secure=COOKIE_SECURE_ENABLED,
+            max_age=int(mfa_token_expires.total_seconds()),
+            samesite=COOKIE_SAMESITE_POLICY,
+            path="/"
+        )
+        return response
+    # --- END MFA CHECK ---
+
 
     token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -310,6 +339,98 @@ def post_signup(
     })
 
     return RedirectResponse(url="/login?message=Account+created+successfully.+Please+log+in.", status_code=status.HTTP_303_SEE_OTHER)
+
+# --- Routes: MFA Verification ---
+
+@router.get("/mfa-verify", response_class=HTMLResponse)
+async def get_mfa_verify(request: Request, error: str = None):
+    # Check for the MFA pending token
+    mfa_pending_token = request.cookies.get("mfa_pending_token")
+    if not mfa_pending_token:
+        # If no pending token, go back to login
+        return RedirectResponse(url="/login?error=Session+expired", status_code=status.HTTP_303_SEE_OTHER)
+
+    try:
+        payload = decode_token(mfa_pending_token)
+        if not payload.get("mfa_pending"):
+            # Token is not the correct type
+            raise JWTError
+        
+        email = payload.get("sub")
+        return templates.TemplateResponse("mfa_verify.html", {
+            "request": request,
+            "error": error,
+            "email": email # for display/debugging
+        })
+
+    except JWTError:
+        response = RedirectResponse(url="/login?error=Invalid+MFA+session", status_code=status.HTTP_303_SEE_OTHER)
+        response.delete_cookie("mfa_pending_token", path="/")
+        return response
+
+@router.post("/mfa-verify", response_class=RedirectResponse)
+@limiter.limit("10/minute")
+async def post_mfa_verify(request: Request, otp_code: str = Form(...)):
+    mfa_pending_token = request.cookies.get("mfa_pending_token")
+    if not mfa_pending_token:
+        return RedirectResponse(url="/login?error=Session+expired", status_code=status.HTTP_303_SEE_OTHER)
+
+    try:
+        payload = decode_token(mfa_pending_token)
+        email = payload.get("sub")
+        if not email or not payload.get("mfa_pending"):
+             raise JWTError
+
+        user = users_collection.find_one({"email": email})
+        if not user or not user.get("mfa_enabled") or not user.get("mfa_secret"):
+            # Should not happen if mfa_pending was set correctly, but a safety check
+            return RedirectResponse(url="/login?error=MFA+Configuration+error", status_code=status.HTTP_303_SEE_OTHER)
+
+        totp = pyotp.TOTP(user["mfa_secret"])
+        
+        # Verify the OTP code with a 30 second window (default)
+        if not totp.verify(otp_code):
+            resp = RedirectResponse(url="/mfa-verify?error=Invalid+MFA+code", status_code=status.HTTP_303_SEE_OTHER)
+            # Retain the pending token for retries
+            return resp
+
+        # MFA Success! Create Final Access Token
+        token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["email"], "role": user.get("role", "user"), "name": user.get("name")},
+            expires_delta=token_expires
+        )
+
+        logins_collection.insert_one({
+            "email": email,
+            "login_time": datetime.now(timezone.utc),
+            "status": "success_mfa",
+            "ip_address": request.client.host if request.client else "unknown"
+        })
+
+        redirect_url = "/admin-dashboard" if user.get("role") == "admin" else "/dashboard"
+        response = RedirectResponse(url=f"{redirect_url}?message=Successfully+logged+in", status_code=status.HTTP_303_SEE_OTHER)
+
+        # Remove MFA pending token and set final access token/utility cookies
+        response.delete_cookie("mfa_pending_token", path="/")
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=COOKIE_SECURE_ENABLED,
+            max_age=int(token_expires.total_seconds()),
+            samesite=COOKIE_SAMESITE_POLICY,
+            path="/"
+        )
+        for key, val in [("user_name", user.get("name", "")), ("user_email", user["email"]), ("user_role", user.get("role", "user"))]:
+            response.set_cookie(key=key, value=val, secure=COOKIE_SECURE_ENABLED, httponly=False, samesite=COOKIE_SAMESITE_POLICY, path="/", max_age=int(token_expires.total_seconds()))
+        
+        return response
+
+    except JWTError:
+        response = RedirectResponse(url="/login?error=Invalid+MFA+session", status_code=status.HTTP_303_SEE_OTHER)
+        response.delete_cookie("mfa_pending_token", path="/")
+        return response
 
 # --- Routes: Google SSO ---
 
@@ -525,16 +646,117 @@ def get_admin_dashboard(request: Request, current_user: dict = Depends(get_curre
 
 @router.get("/user-profile", response_class=HTMLResponse)
 def get_user_profile(request: Request, current_user: dict = Depends(get_required_current_user)):
-    user_email = current_user.get("name") # Logic from original code, though email usually safer
-    shipments = list(shipments_collection.find({"created_by": user_email}))
+    user_email = current_user.get("email") # Get email from current_user dict
+    user_db = users_collection.find_one({"email": user_email}) # Fetch latest user data from DB
+    
+    shipments = list(shipments_collection.find({"created_by": current_user.get("name")})) # Assuming 'created_by' stores the name
     for shipment in shipments:
         shipment["_id"] = str(shipment["_id"])
+
+    # Pass MFA status to the template
+    mfa_enabled = user_db.get("mfa_enabled", False) if user_db else False
 
     return templates.TemplateResponse("user-profile.html", {
         "request": request,
         "user": current_user,
-        "shipments": shipments
+        "shipments": shipments,
+        "mfa_enabled": mfa_enabled,
+        "message": request.query_params.get("message"),
+        "error": request.query_params.get("error")
     })
+
+@router.post("/user-profile/mfa/generate", response_class=RedirectResponse)
+def generate_mfa_secret(current_user: dict = Depends(get_required_current_user)):
+    email = current_user["email"]
+    
+    # Generate new secret
+    secret = generate_totp_secret()
+    
+    # Construct the QR code link (otpauth://TYPE/LABEL?PARAMETERS)
+    # The label is usually app_name:user_email
+    otp_uri = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=email,
+        issuer_name="SCMXpertLite"
+    )
+    
+    # Temporarily store the secret and URI in the user's document for setup
+    users_collection.update_one(
+        {"email": email},
+        {"$set": {"mfa_setup_secret": secret, "mfa_setup_uri": otp_uri, "mfa_setup_time": datetime.now(timezone.utc)}}
+    )
+
+    return RedirectResponse(
+        url=f"/user-profile/mfa/setup?message=MFA+setup+started", 
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+
+@router.get("/user-profile/mfa/setup", response_class=HTMLResponse)
+def get_mfa_setup(request: Request, current_user: dict = Depends(get_required_current_user)):
+    user = users_collection.find_one({"email": current_user["email"]})
+    
+    # Check if a setup is in progress (secret exists)
+    secret = user.get("mfa_setup_secret")
+    uri = user.get("mfa_setup_uri")
+
+    if not secret or not uri:
+        # No setup in progress, redirect to profile to restart
+        return RedirectResponse(url="/user-profile?error=MFA+setup+not+initiated", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Use a service to generate a QR code image (e.g., Google Charts)
+    # Note: For production, consider generating the QR code server-side or using a library.
+    qr_code_url = f"https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl={urllib.parse.quote_plus(uri)}"
+    
+    return templates.TemplateResponse("mfa_setup.html", {
+        "request": request,
+        "user": current_user,
+        "secret": secret,
+        "qr_code_url": qr_code_url,
+        "error": request.query_params.get("error"),
+        "message": request.query_params.get("message")
+    })
+
+@router.post("/user-profile/mfa/enable", response_class=RedirectResponse)
+def enable_mfa(otp_code: str = Form(...), current_user: dict = Depends(get_required_current_user)):
+    email = current_user["email"]
+    user = users_collection.find_one({"email": email})
+    
+    setup_secret = user.get("mfa_setup_secret")
+    if not setup_secret:
+        return RedirectResponse(url="/user-profile?error=MFA+setup+expired", status_code=status.HTTP_303_SEE_OTHER)
+
+    totp = pyotp.TOTP(setup_secret)
+    
+    if totp.verify(otp_code):
+        # Verification success: Finalize MFA setup
+        users_collection.update_one(
+            {"email": email},
+            {"$set": {
+                "mfa_enabled": True,
+                "mfa_secret": setup_secret, # Move setup secret to final secret
+            },
+            "$unset": { # Remove temporary setup fields
+                "mfa_setup_secret": "",
+                "mfa_setup_uri": "",
+                "mfa_setup_time": ""
+            }}
+        )
+        return RedirectResponse(url="/user-profile?message=MFA+successfully+enabled!", status_code=status.HTTP_303_SEE_OTHER)
+    else:
+        # Verification failed: Redirect back to setup page with error
+        return RedirectResponse(
+            url=f"/user-profile/mfa/setup?error=Invalid+MFA+code.+Please+try+again.", 
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+@router.post("/user-profile/mfa/disable", response_class=RedirectResponse)
+def disable_mfa(current_user: dict = Depends(get_required_current_user)):
+    # Simple disable without password for now, though you might want to require password
+    email = current_user["email"]
+    users_collection.update_one(
+        {"email": email},
+        {"$set": {"mfa_enabled": False}, "$unset": {"mfa_secret": ""}}
+    )
+    return RedirectResponse(url="/user-profile?message=MFA+successfully+disabled.", status_code=status.HTTP_303_SEE_OTHER)
 
 # --- Routes: API ---
 

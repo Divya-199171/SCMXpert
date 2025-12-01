@@ -192,7 +192,7 @@
 }
 
 .google-btn img {
-  width: 18px;
-  height: 18px;
+  width: 18px !important;  /* Force the width to 18 pixels */
+  height: 18px !important; /* Force the height to 18 pixels */
   margin-right: 10px;
 }

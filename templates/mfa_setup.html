@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Setup MFA{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0">🔐 Enable Multi-Factor Authentication</h3>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">{{ error }}</div>
+                    {% endif %}
+                    {% if message %}
+                    <div class="alert alert-info" role="alert">{{ message }}</div>
+                    {% endif %}
+
+                    <p>Follow these two steps to enable MFA using a TOTP Authenticator app (like Google Authenticator or Authy):</p>
+                    
+                    <h5 class="mt-4">Step 1: Scan QR Code</h5>
+                    <div class="text-center my-4">
+                        <p>Open your authenticator app and scan this QR code:</p>
+                        <img src="{{ qr_code_url }}" alt="MFA QR Code" class="img-thumbnail" style="width: 200px; height: 200px;">
+                        <p class="mt-3">Or manually enter the secret key: <code>{{ secret }}</code></p>
+                    </div>
+
+                    <h5 class="mt-4">Step 2: Verify Code</h5>
+                    <p>Enter the 6-digit code displayed in your app to confirm the setup.</p>
+                    <form method="post" action="/user-profile/mfa/enable">
+                        <div class="form-group mb-3">
+                            <label for="otp_code">Verification Code</label>
+                            <input type="text" class="form-control" id="otp_code" name="otp_code" placeholder="Enter 6-digit code from app" required maxlength="6" pattern="\d{6}">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Confirm & Enable MFA</button>
+                    </form>
+                    
+                    <hr>
+                    <p class="text-center mt-3"><a href="/user-profile" class="text-muted">Cancel Setup</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Verify MFA{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Multi-Factor Authentication</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-center">A second factor is required for login.</p>
+                    <p class="text-center text-muted">Please enter the 6-digit code from your authenticator app (e.g., Google Authenticator, Authy).</p>
+
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">{{ error }}</div>
+                    {% endif %}
+                    
+                    <form method="post" action="/mfa-verify">
+                        <div class="form-group mb-3">
+                            <label for="otp_code">Authenticator Code</label>
+                            <input type="text" class="form-control" id="otp_code" name="otp_code" placeholder="Enter 6-digit code" required maxlength="6" pattern="\d{6}">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Verify & Log In</button>
+                    </form>
+                    
+                    <hr>
+                    <p class="text-center mt-3"><a href="/login" class="text-primary">Cancel and Go Back to Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

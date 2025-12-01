@@ -10,6 +10,27 @@
     <p><strong>Role:</strong> {{ user.role }}</p>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">Security Settings</div>
+    <div class="card-body">
+        <h5 class="card-title">Multi-Factor Authentication (MFA)</h5>
+        
+        {% if mfa_enabled %}
+            <p class="text-success font-weight-bold">Status: ENABLED ✅</p>
+            <p>Your account is protected with 2FA. You will be prompted for a code at login.</p>
+            <form method="post" action="/user-profile/mfa/disable">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to disable MFA? This will reduce your account security.');">Disable MFA</button>
+            </form>
+        {% else %}
+            <p class="text-danger font-weight-bold">Status: DISABLED ❌</p>
+            <p>MFA is not enabled for your account. It is highly recommended to enable it.</p>
+            <form method="post" action="/user-profile/mfa/generate">
+                <button type="submit" class="btn btn-primary">Enable MFA</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
 <div class="user-shipments">
     <h3>Your Shipments</h3>
     {% if shipments %}

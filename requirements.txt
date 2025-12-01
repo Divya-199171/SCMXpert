@@ -15,3 +15,5 @@ pymongo
 kafka-python
 
 pydantic[email]
+
+slowapi
